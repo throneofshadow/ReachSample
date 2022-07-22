@@ -49,3 +49,11 @@ def circle_variablerad_xdim(y, r):
     x = np.sqrt(r**2 - y**2)
     return x
 
+def initialize_commands_pilot():
+    zero_mm = 'data/0mm.txt'
+    ten_mm = 'data/10mm.txt'
+    twenty_mm = 'data/20mm.txt'
+    thirty_mm = 'data/30mm.txt'
+    forty_mm = 'data/40mm.txt'
+    pilot_3d_positions = 'data/9pt_pidiv3_cone.txt'
+    return np.vstack((zero_mm, ten_mm, twenty_mm, thirty_mm, forty_mm, pilot_3d_positions))
