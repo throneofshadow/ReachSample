@@ -46,7 +46,7 @@ def euclidean_distance_from_reaching_start(x, y, z):
 def circle_variablerad_xdim(y, r):
     """ Function to create hyperbola line, focus at 10cm in reaching space. Given a set of x-coordinates, generate y
         for a given radius r. Phi (elevation) is given as 90 degrees or pi/4, allowing points to be level in the plane. """
-    x = np.sqrt(r**2 - y**2)
+    x = np.sqrt(r ** 2 - y ** 2)
     return x
 
 
@@ -60,3 +60,8 @@ def initialize_commands_pilot():
     forty_mm = read_command_file('data/40mm.txt')
     pilot_3d_positions = read_command_file('data/9pt_pidiv3_cone.txt')
     return np.vstack((zero_mm, ten_mm, twenty_mm, thirty_mm, forty_mm, pilot_3d_positions))
+
+
+def create_pilot_visualizations(make_gif_animation=True):
+    """ This function visualizes the 3-D workspace of ReachMaster's pilot experiments. """
+    return

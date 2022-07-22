@@ -16,3 +16,7 @@ class ReachSample:
 
     def return_commands(self):
         return self.sampled_robot_commands
+
+    def visualize_pilot_workspace(self, create_gif=False):
+        c_d.create_pilot_visualizations(make_gif_animation=create_gif)
+
