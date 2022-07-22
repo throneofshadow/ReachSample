@@ -3,6 +3,10 @@
     7/19/22, UC Berkeley"""
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import animation
+# Must have ffmpeg installed
+
 
 
 # Public functions
@@ -12,7 +16,7 @@ def read_command_file(fname):
     positions = pd.read_csv(fname)
     x_3, y_3, z_3 = [], [], []
     for index, row in positions.iterrows():
-        x, y, z = xform_coords_euclidean(row['r'], row['thetay'], row['thetay.1'])
+        x, y, z = xform_coords_euclidean(row['r'], row['thetay'], row['thetaz'])
         x_3.append(x)
         y_3.append(y)
         z_3.append(z)
@@ -53,15 +57,47 @@ def circle_variablerad_xdim(y, r):
 def initialize_commands_pilot():
     """ This function loads in initial pilot data command positions, returning a vector size
         Experiment Type, n trials, 3 (n dimensions). """
-    zero_mm = read_command_file('data/0mm.txt')
-    ten_mm = read_command_file('data/10mm.txt')
-    twenty_mm = read_command_file('data/20mm.txt')
-    thirty_mm = read_command_file('data/30mm.txt')
-    forty_mm = read_command_file('data/40mm.txt')
+    zero_mm = read_command_file('data/0mm.txt')[:, 0:9]
+    ten_mm = read_command_file('data/10mm.txt')[:, 0:9]
+    twenty_mm = read_command_file('data/20mm.txt')[:, 0:9]
+    thirty_mm = read_command_file('data/30mm.txt')[:, 0:9]
+    forty_mm = read_command_file('data/40mm.txt')[:, 0:9]
     pilot_3d_positions = read_command_file('data/9pt_pidiv3_cone.txt')
     return np.vstack((zero_mm, ten_mm, twenty_mm, thirty_mm, forty_mm, pilot_3d_positions))
 
 
-def create_pilot_visualizations(make_gif_animation=True):
+def make_plot_pilot(fig, ax, pilot_command_positions):
+    """ Plotting function, typeset for pilot_command_positions. """
+    ax.scatter(pilot_command_positions[5, :, 0], pilot_command_positions[5, :, 1], pilot_command_positions[5, :, 2],
+               color='r', label='3D Cone')
+    ax.scatter(pilot_command_positions[1, :, 0], pilot_command_positions[1, :, 1], pilot_command_positions[1, :, 2],
+               color='g', label='10mm Out')
+    ax.scatter(pilot_command_positions[4, :, 0], pilot_command_positions[4, :, 1], pilot_command_positions[4, :, 2],
+               color='g', label='40mm Out')
+    ax.scatter(pilot_command_positions[0, :, 0], pilot_command_positions[0, :, 1], pilot_command_positions[0, :, 2],
+               color='b', label='Initial Reaching Target')
+    ax.scatter(pilot_command_positions[2, :, 0], pilot_command_positions[2, :, 1], pilot_command_positions[2, :, 2],
+               color='y', s=55, label='Origin')
+    ax.set_zlabel('Z (cm)')
+    ax.set_xlabel('X (cm)')
+    ax.set_ylabel('Y (cm)')
+    plt.legend()
+    return fig,
+
+
+def animate(ax, fig, i):
+    """ Function that adjusts animation's elevation and azimuth. """
+    ax.view_init(elev=15., azim=i)
+    return fig,
+
+
+def create_pilot_visualizations(pilot_command_positions, make_gif_animation=True):
     """ This function visualizes the 3-D workspace of ReachMaster's pilot experiments. """
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.add_subplot(1, 1, 1, projection='3d', label='Reaching Volume Projection')
+    ax.view_init(10, 80)
+    if make_gif_animation:
+        anim = animation.FuncAnimation(fig, animate, init_func=make_plot_pilot(fig,ax, pilot_command_positions),
+                                       frames=360, interval=20, blit=True)
+        anim.save('visualizations/pilot_animations.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
     return
