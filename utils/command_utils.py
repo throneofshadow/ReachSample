@@ -5,8 +5,11 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
-# Must have ffmpeg installed
+import random
+import pdb
 
+
+# Must have ffmpeg installed
 
 
 # Public functions
@@ -63,21 +66,99 @@ def initialize_commands_pilot():
     thirty_mm = read_command_file('data/30mm.txt')[:, 0:9]
     forty_mm = read_command_file('data/40mm.txt')[:, 0:9]
     pilot_3d_positions = read_command_file('data/9pt_pidiv3_cone.txt')
-    return np.vstack((zero_mm, ten_mm, twenty_mm, thirty_mm, forty_mm, pilot_3d_positions))
+    return np.vstack((zero_mm, ten_mm, twenty_mm, thirty_mm, forty_mm, pilot_3d_positions)).reshape((6, 3, 9))
+
+
+def rand_sample_length_vector(length, n_positions=9, extrema=False):
+    """ Randomly sample over the x dimension. """
+    v_array = []
+    if extrema:
+        for i in range(n_positions - 7):
+            v_array.append(random.uniform(0, 3 * length / 4))
+        for i in range(n_positions - 7):
+            v_array.append(random.uniform(0, -1 * (3 * length / 4)))
+        v_array.append(0)
+        v_array.append(length)
+        v_array.append(-1 * length)
+    else:
+        for i in range(n_positions - 5):
+            v_array.append(random.uniform(0, length))
+        for i in range(n_positions - 5):
+            v_array.append(random.uniform(0, -1 * length))
+        v_array.append(0)
+    return np.asarray(v_array)
+
+
+def rand_sample_circle(y_array, radius, n_positions=9):
+    """ Randomly sample the x position for 1-D commands. """
+    radius_array = np.repeat(radius, n_positions)
+    x_position = circle_variablerad_xdim(y_array, radius_array)
+    return x_position
+
+
+def obtain_single_theta_command(length, radius, n_positions, sample=False):
+    """ Obtain a command in the single theta dimension that either randomly selects from a set of points or randomly samples
+        between defined ranges."""
+    z_positions = np.zeros(n_positions)
+    y_positions = np.zeros(n_positions)
+    if sample:
+        y_positions[0] = length
+        y_positions[n_positions - 1] = -1 * length
+        y_positions[1:int(n_positions - 1 / 2)] = random.uniform(length - (length / 8), 0 + (length / 8) )
+        y_positions[int(n_positions-1/2) + 1:n_positions - 2] = random.uniform(0 - (length / 8), -1 * length + (length / 8) )
+        x_positions = rand_sample_circle(y_positions, radius, n_positions)
+    else:
+        y_positions = np.linspace(length, -1 * length, n_positions)
+        x_positions = rand_sample_circle(y_positions, radius,
+                                         n_positions) + 0.2  # the origin offset in the x-direction.
+    return np.vstack((x_positions, y_positions, z_positions)).T
+
+
+def obtain_single_phi_command(length, radius, n_positions, sample=False):
+    z_positions = np.zeros(n_positions)
+    x_positions = np.zeros(n_positions) + 0.2  # the origin offset in the x-direction.
+    if sample:
+        x_positions[0] = length
+        x_positions[n_positions - 1] = -1 * length
+        x_positions[1:n_positions - 1 / 2] = random.uniform(length - length / 8, 0)
+        x_positions[1:n_positions - 1 / 2] = random.uniform(-1 * length + length / 8, 0)
+        y_positions = rand_sample_circle(x_positions, radius, n_positions)
+    else:
+        x_positions = np.linspace(length, -1 * length, n_positions)
+        y_positions = rand_sample_circle(x_positions, radius,
+                                         n_positions) + 0.2  # the origin offset in the x-direction.
+    return np.vstack((x_positions, y_positions, z_positions)).T
+
+
+def sample_theta_commands(length, radius, n_trials, n_positions, extrema=True):
+    """ Get randomized position commands for theta (1-D) over n trials. Can leave the ends (extrema=True). """
+    theta_commands = np.zeros((n_trials, n_positions, 3))
+    for i in range(0, n_trials):
+        theta_commands[i, :, :] = obtain_single_theta_command(length, radius, n_positions, sample=extrema)
+    return theta_commands
+
+
+def sample_phi_commands(length, radius, n_positions, n_trials, extrema=True):
+    """ Get randomized position commands for phi (1-D) over n trials. Can leave the ends (extrema=True). """
+    phi_commands = np.zeros((n_trials, n_positions, 3))
+    for i in range(0, n_trials):
+        phi_commands[i, :, :] = obtain_single_phi_command(length, radius, n_positions, sample=extrema)
+    return phi_commands
 
 
 def make_plot_pilot(fig, ax, pilot_command_positions):
     """ Plotting function, typeset for pilot_command_positions. """
-    ax.scatter(pilot_command_positions[5, :, 0], pilot_command_positions[5, :, 1], pilot_command_positions[5, :, 2],
+    ax.scatter(pilot_command_positions[5, 0, :], pilot_command_positions[5, 1, :], pilot_command_positions[5, 2, :],
                color='r', label='3D Cone')
-    ax.scatter(pilot_command_positions[1, :, 0], pilot_command_positions[1, :, 1], pilot_command_positions[1, :, 2],
+    ax.scatter(pilot_command_positions[1, 0, :], pilot_command_positions[1, 1, :], pilot_command_positions[1, 2, :],
                color='g', label='10mm Out')
-    ax.scatter(pilot_command_positions[4, :, 0], pilot_command_positions[4, :, 1], pilot_command_positions[4, :, 2],
+    ax.scatter(pilot_command_positions[4, 0, :], pilot_command_positions[4, 1, :], pilot_command_positions[4, 2, :],
                color='g', label='40mm Out')
-    ax.scatter(pilot_command_positions[0, :, 0], pilot_command_positions[0, :, 1], pilot_command_positions[0, :, 2],
+    ax.scatter(pilot_command_positions[0, 0, :], pilot_command_positions[0, 1, :], pilot_command_positions[0, 2, :],
                color='b', label='Initial Reaching Target')
-    ax.scatter(pilot_command_positions[2, :, 0], pilot_command_positions[2, :, 1], pilot_command_positions[2, :, 2],
+    ax.scatter(pilot_command_positions[2, 0, :], pilot_command_positions[2, 1, :], pilot_command_positions[2, 2, :],
                color='y', s=55, label='Origin')
+    plt.plot(np.zeros(30), np.linspace(-0.4, 0.4, 30), np.zeros(30), color='k', label='Enclosure Entrance')
     ax.set_zlabel('Z (cm)')
     ax.set_xlabel('X (cm)')
     ax.set_ylabel('Y (cm)')
@@ -85,7 +166,7 @@ def make_plot_pilot(fig, ax, pilot_command_positions):
     return fig,
 
 
-def animate(ax, fig, i):
+def animate_a(ax, fig, i):
     """ Function that adjusts animation's elevation and azimuth. """
     ax.view_init(elev=15., azim=i)
     return fig,
@@ -96,8 +177,56 @@ def create_pilot_visualizations(pilot_command_positions, make_gif_animation=True
     fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(1, 1, 1, projection='3d', label='Reaching Volume Projection')
     ax.view_init(10, 80)
+    make_plot_pilot(fig, ax, pilot_command_positions)
+    print('Visualization of pilot experiment workspace.')
+    plt.show()
     if make_gif_animation:
-        anim = animation.FuncAnimation(fig, animate, init_func=make_plot_pilot(fig,ax, pilot_command_positions),
+        print('Creating animation for pilot experiment workspace. ')
+        anim = animation.FuncAnimation(fig, animate_a, init_func=make_plot_pilot(fig, ax, pilot_command_positions),
                                        frames=360, interval=20, blit=True)
         anim.save('visualizations/pilot_animations.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
     return
+
+
+def func_viz(fig, ax, positions):
+    ax.scatter(positions[:, :, 0], positions[:, :, 1], positions[:, :, 2], c='r', label='Positions')
+    ax.scatter(0.2, 0, 0, color='y', s=55, label='Origin')
+    plt.plot(np.zeros(30), np.linspace(-0.4, 0.4, 30), np.zeros(30), color='k', label='Enclosure Entrance')
+    plt.legend()
+    ax.set_zlabel('Z (cm)')
+    ax.set_xlabel('X (cm)')
+    ax.set_ylabel('Y (cm)')
+    return fig,
+
+
+def func_viz_sample(fig, ax, positions):
+    for ir in positions.shape[0]:
+        ax.scatter(positions[ir, :, 0], positions[ir, :, 1], positions[ir, :, 2])
+    ax.scatter(positions[0, :, 0], positions[0, :, 1], positions[0, :, 2], label='Positions')
+    ax.scatter(2, 0, 0, color='y', s=55, label='Origin')
+    plt.plot(np.zeros(30), np.linspace(-0.4, 0.4, 30), np.zeros(30), color='k', label='Enclosure Entrance')
+    plt.legend()
+    ax.set_zlabel('Z (cm)')
+    ax.set_xlabel('X (cm)')
+    ax.set_ylabel('Y (cm)')
+    return fig,
+
+
+def visualize_commands(commands, sample=False, animate=False, fname=False):
+    """ Function to visualize incoming vector-based x,y, z commands. Function takes in vector size n_trials, n_positions, 3.
+        Function outputs matlab-based visualization of positions within ReachMaster's 3-D workspace. """
+    fig1 = plt.figure(figsize=(10, 10))
+    ax1 = fig1.add_subplot(1, 1, 1, projection='3d', label='Reaching Volume Projection: Created Experiment')
+    if sample:
+        func_viz_sample(fig1, ax1, commands)
+    else:
+        func_viz(fig1, ax1, commands)
+    plt.show()
+    if animate:
+        anim = animation.FuncAnimation(fig1, animate_a, init_func=func_viz(fig1, ax1, commands), frames=360,
+                                       interval=20,
+                                       blit=True)
+        if fname:
+            anim.save(fname, fps=30, extra_args=['-vcodec', 'libx264'])
+        else:
+            anim.save('visualizations/default_animations.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
