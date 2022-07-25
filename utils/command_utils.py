@@ -289,21 +289,4 @@ def visualize_commands(commands, sample=False, animate=False, animate_filename=F
             anim.save('visualizations/default_animations.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
 
 
-def histogram_command_files(commands, bin_num=5, density=False, comtype=None, save_file = None):
-    """ Function to create multi-class histogram to examine x, y, and z positions for a given set of commands.
-        These commands may be in any dimension. """
-    plt.hist(commands[:, 0], bins=bin_num, density=density, color='r', label='X Positions')
-    plt.hist(commands[:, 1], bins=bin_num, density=density, color='g', label='Y Positions')
-    plt.hist(commands[:, 2], bins=bin_num, density=density, color='b', label='Z Positions')
-    plt.legend()
-    if comtype:
-        plt.title('Command Positions: ' + str(comtype))
-    else:
-        plt.title('Command Positions. ')
-
-    if save_file:
-        plt.savefig(save_file, dpi=400)
-    plt.show()
-
-
 
