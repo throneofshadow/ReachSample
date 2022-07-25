@@ -69,24 +69,53 @@ def initialize_commands_pilot():
     return np.vstack((zero_mm, ten_mm, twenty_mm, thirty_mm, forty_mm, pilot_3d_positions)).reshape((6, 3, 9))
 
 
-def rand_sample_length_vector(length, n_positions=9, extrema=False):
-    """ Randomly sample over the x dimension. """
-    v_array = []
-    if extrema:
-        for i in range(n_positions - 7):
-            v_array.append(random.uniform(0, 3 * length / 4))
-        for i in range(n_positions - 7):
-            v_array.append(random.uniform(0, -1 * (3 * length / 4)))
-        v_array.append(0)
-        v_array.append(length)
-        v_array.append(-1 * length)
+def get_2d_commands(z_length, y_length, radius, n_positions, n_trials, sample=False, extrema=True):
+    """ Function that obtains trial-on-trial ReachMaster command positions for the 2-D spatial dimension of task.
+        This function either a) structures points in a symmetric (about x) manner or b) uses randomization to subsample
+        points within a given 2-D space. Sub-sampling may either include consistent extrema or none at all. """
+    command_positions_2d = np.zeros((n_trials, n_positions, 3))
+    if sample:
+        for i in range(0, n_trials):  #
+            if extrema:
+                phi_command = obtain_single_phi_command(z_length, radius, n_positions, sample=True)
+                theta_command = obtain_single_theta_command(y_length, radius, n_positions, sample=True)
+            else:
+                phi_command = obtain_single_phi_command(z_length, radius, n_positions, sample=True, extrema=False)
+                theta_command = obtain_single_theta_command(y_length, radius, n_positions, sample=True, extrema=False)
+            s = np.random.binomial(1, 0.5, 1)
+            if s < 1:  # odd split theta, even split phi
+                command_positions_2d[i, ::1, :] = theta_command[::1, :]
+                command_positions_2d[i, ::2, :] = phi_command[::2, :]
+            else:  # even split theta, odd split phi
+                command_positions_2d[i, ::1, :] = phi_command[::1, :]
+                command_positions_2d[i, ::2, :] = theta_command[::2, :]
     else:
-        for i in range(n_positions - 5):
-            v_array.append(random.uniform(0, length))
-        for i in range(n_positions - 5):
-            v_array.append(random.uniform(0, -1 * length))
-        v_array.append(0)
-    return np.asarray(v_array)
+        phi_command = obtain_single_phi_command(z_length, radius, n_positions)
+        theta_command = obtain_single_phi_command(y_length, radius, n_positions)
+        for i in range(0, n_trials):
+            s = np.random.binomial(1, 0.5, 1)  # draw from binomial distribution
+            if s < 1:  # odd split theta, even split phi
+                command_positions_2d[i, ::1, :] = theta_command[::1, :]
+                command_positions_2d[i, ::2, :] = phi_command[::2, :]
+            else:  # even split theta, odd split phi
+                command_positions_2d[i, ::1, :] = phi_command[::1, :]
+                command_positions_2d[i, ::2, :] = theta_command[::2, :]
+    return command_positions_2d
+
+
+def sample_3d_structure(stride, length, radius, n_positions, n_trials, sample=False):
+    commands_3d = np.zeros(n_trials, n_positions, 3)
+    commands_2d = get_2d_commands(length, radius, n_positions, n_trials, sample=sample)
+    for l in range(0, n_trials):
+        for ir in range(0, n_positions - 1):
+            choose_axis = np.random.multinomial(1, [1.0 / 3, 1.0 / 3, 1.0 / 3], size=1)
+            if choose_axis == 0:  # Take selected component stride in +x direction
+                commands_3d[l, ir, :] = commands_2d[l, ir, :] + stride
+            if choose_axis == 1:
+                commands_3d[l, ir, :] = commands_2d[l, ir, :]
+            if choose_axis == 2:
+                commands_3d[l, ir, :] = commands_2d[l, ir, :] - stride
+    return commands_3d
 
 
 def rand_sample_circle(y_array, radius, n_positions=9):
@@ -96,16 +125,25 @@ def rand_sample_circle(y_array, radius, n_positions=9):
     return x_position
 
 
-def obtain_single_theta_command(length, radius, n_positions, sample=False):
+def obtain_single_theta_command(length, radius, n_positions, sample=False, extrema=True):
     """ Obtain a command in the single theta dimension that either randomly selects from a set of points or randomly samples
         between defined ranges."""
     z_positions = np.zeros(n_positions)
     y_positions = np.zeros(n_positions)
     if sample:
-        y_positions[0] = length
-        y_positions[n_positions - 1] = -1 * length
-        y_positions[1:int(n_positions - 1 / 2)] = random.uniform(length - (length / 8), 0 + (length / 8) )
-        y_positions[int(n_positions-1/2) + 1:n_positions - 2] = random.uniform(0 - (length / 8), -1 * length + (length / 8) )
+        if extrema:
+            y_positions[0] = length
+            y_positions[n_positions - 1] = -1 * length
+            y_positions[1:int((n_positions - 1) / 2)] = np.random.uniform(length - (length / 16), 0 + (length / 16), 3)
+            y_positions[int((n_positions - 1) / 2) + 1:n_positions - 1] = np.random.uniform(0 - (length / 16),
+                                                                                            -1 * length + (length / 16),
+                                                                                            3)
+        else:
+            y_positions[0:int((n_positions - 1) / 2)] = np.random.uniform(length - (length / 16 * 2),
+                                                                          0 + (length / 16 * 2), 4)
+            y_positions[int((n_positions - 1) / 2) + 1:n_positions] = np.random.uniform(0 - (length / 16 * 2),
+                                                                                        -1 * length + (length / 16 * 2),
+                                                                                        4)
         x_positions = rand_sample_circle(y_positions, radius, n_positions)
     else:
         y_positions = np.linspace(length, -1 * length, n_positions)
@@ -115,18 +153,24 @@ def obtain_single_theta_command(length, radius, n_positions, sample=False):
 
 
 def obtain_single_phi_command(length, radius, n_positions, sample=False):
-    z_positions = np.zeros(n_positions)
-    x_positions = np.zeros(n_positions) + 0.2  # the origin offset in the x-direction.
+    """ Function that inverts commands in the theta plane to rotate about the x-axis (z-plane). These commands
+        allow a user to functionally interrogate the theta-z or phi plane in spherical coordinates with the robot
+        handle position."""
+    y_positions = np.zeros(n_positions)
+    z_positions = np.zeros(n_positions)  # the origin offset in the x-direction.
     if sample:
-        x_positions[0] = length
-        x_positions[n_positions - 1] = -1 * length
-        x_positions[1:n_positions - 1 / 2] = random.uniform(length - length / 8, 0)
-        x_positions[1:n_positions - 1 / 2] = random.uniform(-1 * length + length / 8, 0)
-        y_positions = rand_sample_circle(x_positions, radius, n_positions)
+        z_positions[0] = length
+        z_positions[n_positions - 1] = -1 * length
+        z_positions[1:int((n_positions - 1) / 2)] = np.random.uniform(length - (length / 16), 0, 3)
+        z_positions[int((n_positions - 1) / 2) + 1:n_positions - 1] = np.random.uniform(-1 * length + (length / 16), 0, 3)
+        x_positions = rand_sample_circle(z_positions, radius, n_positions)
+        z_positions[int((n_positions - 1) / 2) + 1:n_positions - 1] = \
+            z_positions[int((n_positions - 1) / 2) + 1:n_positions - 1]
+        x_positions = x_positions
     else:
-        x_positions = np.linspace(length, -1 * length, n_positions)
-        y_positions = rand_sample_circle(x_positions, radius,
-                                         n_positions) + 0.2  # the origin offset in the x-direction.
+        x_positions = np.linspace(length, -1 * length, n_positions)   # the origin offset in the x-direction.
+        z_positions = rand_sample_circle(x_positions, radius,
+                                         n_positions)
     return np.vstack((x_positions, y_positions, z_positions)).T
 
 
@@ -200,7 +244,7 @@ def func_viz(fig, ax, positions):
 
 
 def func_viz_sample(fig, ax, positions):
-    for ir in positions.shape[0]:
+    for ir in range(1, positions.shape[0] - 1):
         ax.scatter(positions[ir, :, 0], positions[ir, :, 1], positions[ir, :, 2])
     ax.scatter(positions[0, :, 0], positions[0, :, 1], positions[0, :, 2], label='Positions')
     ax.scatter(2, 0, 0, color='y', s=55, label='Origin')
