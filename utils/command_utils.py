@@ -15,16 +15,16 @@ import pdb
 # Public functions
 
 
-def read_command_file(fname):
-    positions = pd.read_csv(fname)
+def read_command_file(filename):
+    positions = pd.read_csv(filename)
     x_3, y_3, z_3 = [], [], []
     for index, row in positions.iterrows():
         x, y, z = xform_coords_euclidean(row['r'], row['thetay'], row['thetaz'])
         x_3.append(x)
         y_3.append(y)
         z_3.append(z)
-    fpositions = np.vstack((x_3, y_3, z_3))
-    return fpositions
+    _positions = np.vstack((x_3, y_3, z_3))
+    return _positions
 
 
 def xform_coords_euclidean(r, theta, phi):
@@ -103,18 +103,28 @@ def get_2d_commands(z_length, y_length, radius, n_positions, n_trials, sample=Fa
     return command_positions_2d
 
 
-def sample_3d_structure(stride, length, radius, n_positions, n_trials, sample=False):
-    commands_3d = np.zeros(n_trials, n_positions, 3)
-    commands_2d = get_2d_commands(length, radius, n_positions, n_trials, sample=sample)
+def sample_3d_structure(stride, y_length, z_length,  radius, n_positions, n_trials, sample=False, extrema=True):
+    """ Function to sample 2-D positional commands in a stride-based symmetric manner. This function requires
+        pre-defined x,y,z lengths (stride is the x-length), radius of circle around reaching position, the
+        number of positions and number of trials to sample commands over. """
+    commands_3d = np.zeros((n_trials, n_positions, 3))
+    commands_2d = get_2d_commands(z_length, y_length, radius, n_positions, n_trials, sample=sample, extrema=extrema)
     for l in range(0, n_trials):
-        for ir in range(0, n_positions - 1):
+        for ir in range(0, n_positions):
             choose_axis = np.random.multinomial(1, [1.0 / 3, 1.0 / 3, 1.0 / 3], size=1)
-            if choose_axis == 0:  # Take selected component stride in +x direction
-                commands_3d[l, ir, :] = commands_2d[l, ir, :] + stride
-            if choose_axis == 1:
+            #pdb.set_trace()
+            if choose_axis[0, 0] == 1:  # Take selected component stride in +x direction
+                commands_3d[l, ir, 1] = commands_2d[l, ir, 1]
+                commands_3d[l, ir, 2] = commands_2d[l, ir, 2]
+                commands_3d[l, ir, 0] = commands_2d[l, ir, 0] + stride
+            if choose_axis[0, 1] == 1:
+                commands_3d[l, ir, 1] = commands_2d[l, ir, 1]
+                commands_3d[l, ir, 2] = commands_2d[l, ir, 2]
                 commands_3d[l, ir, :] = commands_2d[l, ir, :]
-            if choose_axis == 2:
-                commands_3d[l, ir, :] = commands_2d[l, ir, :] - stride
+            if choose_axis[0, 2] == 1:
+                commands_3d[l, ir, 1] = commands_2d[l, ir, 1]
+                commands_3d[l, ir, 2] = commands_2d[l, ir, 2]
+                commands_3d[l, ir, 0] = commands_2d[l, ir, 0] - stride
     return commands_3d
 
 
@@ -152,7 +162,7 @@ def obtain_single_theta_command(length, radius, n_positions, sample=False, extre
     return np.vstack((x_positions, y_positions, z_positions)).T
 
 
-def obtain_single_phi_command(length, radius, n_positions, sample=False):
+def obtain_single_phi_command(length, radius, n_positions, sample=False, extrema=False):
     """ Function that inverts commands in the theta plane to rotate about the x-axis (z-plane). These commands
         allow a user to functionally interrogate the theta-z or phi plane in spherical coordinates with the robot
         handle position."""
@@ -233,6 +243,7 @@ def create_pilot_visualizations(pilot_command_positions, make_gif_animation=True
 
 
 def func_viz(fig, ax, positions):
+    """ Function to visualize command positions using the scatter command. Function scatters entire command vector."""
     ax.scatter(positions[:, :, 0], positions[:, :, 1], positions[:, :, 2], c='r', label='Positions')
     ax.scatter(0.2, 0, 0, color='y', s=55, label='Origin')
     plt.plot(np.zeros(30), np.linspace(-0.4, 0.4, 30), np.zeros(30), color='k', label='Enclosure Entrance')
@@ -244,6 +255,8 @@ def func_viz(fig, ax, positions):
 
 
 def func_viz_sample(fig, ax, positions):
+    """ Function to visualize randomly sampled command positions using the scatter command. Function scatters entire
+        command. """
     for ir in range(1, positions.shape[0] - 1):
         ax.scatter(positions[ir, :, 0], positions[ir, :, 1], positions[ir, :, 2])
     ax.scatter(positions[0, :, 0], positions[0, :, 1], positions[0, :, 2], label='Positions')
@@ -256,7 +269,7 @@ def func_viz_sample(fig, ax, positions):
     return fig,
 
 
-def visualize_commands(commands, sample=False, animate=False, fname=False):
+def visualize_commands(commands, sample=False, animate=False, animate_filename=False):
     """ Function to visualize incoming vector-based x,y, z commands. Function takes in vector size n_trials, n_positions, 3.
         Function outputs matlab-based visualization of positions within ReachMaster's 3-D workspace. """
     fig1 = plt.figure(figsize=(10, 10))
@@ -270,7 +283,7 @@ def visualize_commands(commands, sample=False, animate=False, fname=False):
         anim = animation.FuncAnimation(fig1, animate_a, init_func=func_viz(fig1, ax1, commands), frames=360,
                                        interval=20,
                                        blit=True)
-        if fname:
-            anim.save(fname, fps=30, extra_args=['-vcodec', 'libx264'])
+        if animate_filename:
+            anim.save(animate_filename, fps=30, extra_args=['-vcodec', 'libx264'])
         else:
             anim.save('visualizations/default_animations.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
