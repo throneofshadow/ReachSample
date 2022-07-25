@@ -51,7 +51,7 @@ class ReachSample:
         self.theta_commands = c_d.sample_theta_commands(y_limit, radius, n_trials, n_positions, extrema=sample)
         if visualize:
             c_d.visualize_commands(self.theta_commands, sample=sample, animate=animate, animate_filename=animate_filename)
-            c_d.histogram_command_files(self.theta_commands, density=False, save_file='data/histogram_theta.png')
+            c_d.histogram_command_files(self.theta_commands, density=False, save_file='visualizations/histogram_theta.png')
         if export:
             for i in n_trials:
                 self.theta_commands = c_d.xform_coords_spherical(self.theta_commands[i, :, 0],
@@ -67,7 +67,7 @@ class ReachSample:
         self.phi_commands = c_d.sample_phi_commands(x_limit, radius, n_positions, n_trials, extrema=sample)
         if visualize:
             c_d.visualize_commands(self.phi_commands, sample=sample, animate=animate, animate_filename=animate_filename)
-            c_d.histogram_command_files(self.phi_commands, density=False, save_file='data/histogram_phi.png')
+            c_d.histogram_command_files(self.phi_commands, density=False, save_file='visualizations/histogram_phi.png')
         if export:
             for i in n_trials:
                 self.phi_commands = c_d.xform_coords_spherical(self.phi_commands[i, :, 0], self.phi_commands[i, :, 1],
@@ -83,7 +83,7 @@ class ReachSample:
         self.commands_2d = c_d.get_2d_commands(z_length, y_length, radius, n_positions, n_trials, sample=sample,
                                                extrema=extrema)
         if visualize:
-            c_d.histogram_command_files(self.commands_2d, density=False, save_file='data/histogram_2d.png')
+            c_d.histogram_command_files(self.commands_2d, density=False, save_file='visualizations/histogram_2d.png')
             c_d.visualize_commands(self.commands_2d, sample=sample, animate=animate, animate_filename=animate_filename)
         if export:
             for i in n_trials:
@@ -102,7 +102,7 @@ class ReachSample:
         self.commands_3d = c_d.sample_3d_structure(x_length, y_length, z_length, radius, n_positions, n_trials,
                                                    sample=sample, extrema=extrema)
         if visualize:
-            c_d.histogram_command_files(self.commands_3d, density=False, save_file='data/histogram_3d.png')
+            c_d.histogram_command_files(self.commands_3d, density=False, save_file='visualizations/histogram_3d.png')
             c_d.visualize_commands(self.commands_3d, sample=sample, animate=animate, animate_filename = animate_filename)
         if export:
             for i in n_trials:
