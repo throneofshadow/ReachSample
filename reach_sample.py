@@ -5,29 +5,6 @@ import pdb
 import numpy as np
 import utils.command_utils as c_d
 import pandas as pd
-import matplotlib.pyplot as plt
-
-
-def histogram_command_files(commands, bin_num=25, density=False, comtype=None, save_file = None):
-    """ Function to create multi-class histogram to examine x, y, and z positions for a given set of commands.
-        These commands may be in any dimension. """
-    x_commands = commands[:, :, 0].reshape(commands.shape[0]*commands.shape[1]) - 2  # x_offset.
-    y_commands = commands[:, :, 1].reshape(commands.shape[0]*commands.shape[1])
-    z_commands = commands[:, :, 2].reshape(commands.shape[0]*commands.shape[1])
-    plt.hist(x_commands, bins=bin_num, density=density, color='r', histtype='barstacked', label='X Positions')
-    plt.hist(y_commands, bins=bin_num, density=density, color='g', histtype='barstacked', label='Y Positions')
-    plt.hist(z_commands, bins=bin_num, density=density, color='b', histtype='barstacked', label='Z Positions')
-    plt.xlabel('Positions relative to origin (cm)')
-    plt.ylabel('Counts')
-    plt.legend()
-    if comtype:
-        plt.title('Command Positions: ' + str(comtype))
-    else:
-        plt.title('Command Positions. ')
-
-    if save_file:
-        plt.savefig(save_file, dpi=400)
-    plt.show()
 
 
 def create_robot_command(idi, file=None):
@@ -74,7 +51,7 @@ class ReachSample:
         self.theta_commands = c_d.sample_theta_commands(y_limit, radius, n_trials, n_positions, extrema=sample)
         if visualize:
             c_d.visualize_commands(self.theta_commands, sample=sample, animate=animate, animate_filename=animate_filename)
-            histogram_command_files(self.theta_commands, density=False, save_file='data/histogram_theta.png')
+            c_d.histogram_command_files(self.theta_commands, density=False, save_file='data/histogram_theta.png')
         if export:
             for i in n_trials:
                 self.theta_commands = c_d.xform_coords_spherical(self.theta_commands[i, :, 0],
@@ -87,10 +64,10 @@ class ReachSample:
         """ Method to create a 1-D phi (z-plane) task workspace. This method relies on functions from
             utils directory to create, visualize, generalize with statistics, and export command files for
             a phi robot command position workspace. """
-        self.phi_commands = c_d.sample_phi_commands(x_limit, radius, n_trials, n_positions, extrema=sample)
+        self.phi_commands = c_d.sample_phi_commands(x_limit, radius, n_positions, n_trials, extrema=sample)
         if visualize:
             c_d.visualize_commands(self.phi_commands, sample=sample, animate=animate, animate_filename=animate_filename)
-            histogram_command_files(self.phi_commands, density=False, save_file='data/histogram_phi.png')
+            c_d.histogram_command_files(self.phi_commands, density=False, save_file='data/histogram_phi.png')
         if export:
             for i in n_trials:
                 self.phi_commands = c_d.xform_coords_spherical(self.phi_commands[i, :, 0], self.phi_commands[i, :, 1],
@@ -106,7 +83,7 @@ class ReachSample:
         self.commands_2d = c_d.get_2d_commands(z_length, y_length, radius, n_positions, n_trials, sample=sample,
                                                extrema=extrema)
         if visualize:
-            histogram_command_files(self.commands_2d, density=False, save_file='data/histogram_2d.png')
+            c_d.histogram_command_files(self.commands_2d, density=False, save_file='data/histogram_2d.png')
             c_d.visualize_commands(self.commands_2d, sample=sample, animate=animate, animate_filename=animate_filename)
         if export:
             for i in n_trials:
@@ -125,7 +102,7 @@ class ReachSample:
         self.commands_3d = c_d.sample_3d_structure(x_length, y_length, z_length, radius, n_positions, n_trials,
                                                    sample=sample, extrema=extrema)
         if visualize:
-            histogram_command_files(self.commands_3d, density=False, save_file='data/histogram_3d.png')
+            c_d.histogram_command_files(self.commands_3d, density=False, save_file='data/histogram_3d.png')
             c_d.visualize_commands(self.commands_3d, sample=sample, animate=animate, animate_filename = animate_filename)
         if export:
             for i in n_trials:

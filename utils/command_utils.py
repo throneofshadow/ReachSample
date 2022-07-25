@@ -289,4 +289,26 @@ def visualize_commands(commands, sample=False, animate=False, animate_filename=F
             anim.save('visualizations/default_animations.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
 
 
+def histogram_command_files(commands, bin_num=25, density=False, comtype=None, save_file = None):
+    """ Function to create multi-class histogram to examine x, y, and z positions for a given set of commands.
+        These commands may be in any dimension. """
+    x_commands = commands[:, :, 0].reshape(commands.shape[0]*commands.shape[1]) - 2  # x_offset.
+    y_commands = commands[:, :, 1].reshape(commands.shape[0]*commands.shape[1])
+    z_commands = commands[:, :, 2].reshape(commands.shape[0]*commands.shape[1])
+    plt.hist(x_commands, bins=bin_num, density=density, color='r', histtype='barstacked', label='X Positions')
+    plt.hist(y_commands, bins=bin_num, density=density, color='g', histtype='barstacked', label='Y Positions')
+    plt.hist(z_commands, bins=bin_num, density=density, color='b', histtype='barstacked', label='Z Positions')
+    plt.xlabel('Positions relative to origin (cm)')
+    plt.ylabel('Counts')
+    plt.legend()
+    if comtype:
+        plt.title('Command Positions: ' + str(comtype))
+    else:
+        plt.title('Command Positions. ')
+
+    if save_file:
+        plt.savefig(save_file, dpi=400)
+    plt.show()
+
+
 
