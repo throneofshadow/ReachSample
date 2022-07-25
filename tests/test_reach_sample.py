@@ -1,5 +1,4 @@
 import unittest
-import numpy as np
 import os
 os.chdir('../')
 from reach_sample import ReachSample as RS
