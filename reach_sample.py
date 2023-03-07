@@ -69,9 +69,12 @@ class ReachSample:
             c_d.visualize_commands(self.phi_commands, sample=sample, animate=animate, animate_filename=animate_filename)
             c_d.histogram_command_files(self.phi_commands, density=False, save_file='visualizations/histogram_phi.png')
         if export:
-            for i in n_trials:
+            il = 0
+            if il < n_trials:
                 self.phi_commands = c_d.xform_coords_spherical(self.phi_commands[i, :, 0], self.phi_commands[i, :, 1],
                                                                self.phi_commands[i, :, 2])
+                il += 1
+                pdb.set_trace()
             create_robot_command(self.phi_commands, file=export_filename)
 
     def create_2d_workspace(self, z_length, y_length, radius, n_trials, n_positions, extrema=True, sample=False,
