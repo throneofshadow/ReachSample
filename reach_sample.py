@@ -21,6 +21,7 @@ def create_robot_command(idi, file=None):
 
 class ReachSample:
     def __init__(self):
+        self.robot_euclidean_commands = []
         self.sampled_robot_commands, self.theta_commands, self.phi_commands, self.commands_2d = 0, [], [], []
         self.commands_3d = []
         self.initial_commands = c_d.initialize_commands_pilot()
@@ -50,16 +51,22 @@ class ReachSample:
             a theta robot command position workspace. """
         self.theta_commands = c_d.sample_theta_commands(y_limit, radius, n_trials, n_positions, extrema=sample)
         if visualize:
-            c_d.visualize_commands(self.theta_commands, sample=sample, animate=animate, animate_filename=animate_filename)
-            c_d.histogram_command_files(self.theta_commands, density=False, save_file='visualizations/histogram_theta.png')
+            c_d.visualize_commands(self.theta_commands, sample=sample, animate=animate,
+                                   animate_filename=animate_filename)
+            c_d.histogram_command_files(self.theta_commands, density=False,
+                                        save_file='visualizations/histogram_theta.png')
         if export:
             for i in n_trials:
-                self.theta_commands = c_d.xform_coords_spherical(self.theta_commands[i, :, 0],
-                                                                 self.theta_commands[i, :, 1],
-                                                                 self.theta_commands[i, :, 2])
-            create_robot_command(self.theta_commands, file=export_filename)
+                self.robot_euclidean_commands.append(c_d.xform_coords_spherical(self.theta_commands[i, :, 0],
+                                                                                self.theta_commands[i, :, 1],
+                                                                                self.theta_commands[i, :, 2]))
+            create_robot_command(self.robot_euclidean_commands, file=export_filename)
+            self.robot_euclidean_commands = []  # Clear memory
 
-    def create_phi_workspace(self, x_limit, radius, n_trials, n_positions, sample=False, visualize=False, export=False,
+    def create_ph
+
+
+        i_workspace(self, x_limit, radius, n_trials, n_positions, sample=False, visualize=False, export=False,
                              animate=False, animate_filename=False, export_filename=False):
         """ Method to create a 1-D phi (z-plane) task workspace. This method relies on functions from
             utils directory to create, visualize, generalize with statistics, and export command files for
@@ -71,11 +78,13 @@ class ReachSample:
         if export:
             il = 0
             if il < n_trials:
-                self.phi_commands = c_d.xform_coords_spherical(self.phi_commands[i, :, 0], self.phi_commands[i, :, 1],
-                                                               self.phi_commands[i, :, 2])
+                self.robot_euclidean_commands.append(
+                    c_d.xform_coords_spherical(self.phi_commands[i, :, 0], self.phi_commands[i, :, 1],
+                                               self.phi_commands[i, :, 2]))
                 il += 1
                 pdb.set_trace()
-            create_robot_command(self.phi_commands, file=export_filename)
+            create_robot_command(self.robot_euclidean_commands, file=export_filename)
+            self.robot_euclidean_commands = []  # Clear memory
 
     def create_2d_workspace(self, z_length, y_length, radius, n_trials, n_positions, extrema=True, sample=False,
                             visualize=False, export=False, animate=False, animate_filename=False,
@@ -90,11 +99,14 @@ class ReachSample:
             c_d.visualize_commands(self.commands_2d, sample=sample, animate=animate, animate_filename=animate_filename)
         if export:
             for i in n_trials:
-                self.commands_2d = c_d.xform_coords_spherical(self.commands_2d[i, :, 0], self.commands_2d[i, :, 1],
-                                                              self.commands_2d[i, :, 2])
-            create_robot_command(self.commands_2d, file=export_filename)
+                self.robot_euclidean_commands.append(
+                    c_d.xform_coords_spherical(self.commands_2d[i, :, 0], self.commands_2d[i, :, 1],
+                                               self.commands_2d[i, :, 2]))
+            create_robot_command(self.robot_euclidean_commands, file=export_filename)
+            self.robot_euclidean_commands = []  # Clear memory
 
-    def create_3d_workspace(self, z_length, y_length, x_length, radius, n_trials, n_positions, extrema=True, sample=False,
+    def create_3d_workspace(self, z_length, y_length, x_length, radius, n_trials, n_positions, extrema=True,
+                            sample=False,
                             visualize=False, export=False, animate=False, animate_filename=False,
                             export_filename=False):
         """ Method to create a 3-D theta-phi (y-z plane) task workspace. This method relies on functions from
@@ -106,9 +118,11 @@ class ReachSample:
                                                    sample=sample, extrema=extrema)
         if visualize:
             c_d.histogram_command_files(self.commands_3d, density=False, save_file='visualizations/histogram_3d.png')
-            c_d.visualize_commands(self.commands_3d, sample=sample, animate=animate, animate_filename = animate_filename)
+            c_d.visualize_commands(self.commands_3d, sample=sample, animate=animate, animate_filename=animate_filename)
         if export:
             for i in n_trials:
-                self.commands_3d = c_d.xform_coords_spherical(self.commands_3d[i, :, 0], self.commands_3d[i, :, 1],
-                                                              self.commands_3d[i, :, 2])
-            create_robot_command(self.commands_3d, file=export_filename)
+                self.robot_euclidean_commands.append(
+                    c_d.xform_coords_spherical(self.commands_3d[i, :, 0], self.commands_3d[i, :, 1],
+                                               self.commands_3d[i, :, 2]))
+            create_robot_command(self.robot_euclidean_commands, file=export_filename)
+            self.robot_euclidean_commands = []  # Clear memory
