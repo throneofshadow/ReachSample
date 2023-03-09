@@ -5,11 +5,14 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
+import pdb
 
 # Public functions
 
 
 def read_command_file(filename):
+    """ Function to read robot command files using pandas.
+    """
     positions = pd.read_csv(filename)
     x_3, y_3, z_3 = [], [], []
     for index, row in positions.iterrows():
@@ -22,6 +25,9 @@ def read_command_file(filename):
 
 
 def xform_coords_euclidean(r, theta, phi):
+    """ Transforms spherical-based robot commands (r, theta, phi) into euclidean-based coordinates. Used for
+        plotting workspaces in reach_sample.
+    """
     x = r * np.cos(phi * (np.pi / 180.)) * np.cos(theta * (np.pi / 180.))
     y = r * np.sin(theta * (np.pi / 180.)) * np.cos(phi * (np.pi / 180.))
     z = r * np.sin(phi * (np.pi / 180.))
@@ -32,13 +38,16 @@ def xform_coords_euclidean(r, theta, phi):
 
 
 def xform_coords_spherical(x, y, z):
+    """ Transforms euclidean-based 3D coordinates to spherical coordinates (r, theta, phi). """
     r = np.sqrt(x ** 2 + y ** 2 + z ** 2)  # path length
-    theta = np.arccos(z / r)  # degrees
-    phi = np.arctan(y / x)  # degrees
+    theta = np.radians(np.arccos(z / r))  # degrees
+    phi = np.radians(np.arctan(y / x))  # degrees
     return r, theta, phi
 
 
 def euclidean_distance_from_reaching_start(x, y, z):
+    """ Determines the euclidean distance from the tentative center of reaching area.
+    """
     x0, y0, z0 = 0, 0, 0
     distance = np.sqrt((x - x0) ** 2 + (y - y0) ** 2 + (z - z0) ** 2)
     return distance
