@@ -40,8 +40,8 @@ def xform_coords_euclidean(r, theta, phi):
 def xform_coords_spherical(x, y, z):
     """ Transforms euclidean-based 3D coordinates to spherical coordinates (r, theta, phi). """
     r = round(np.sqrt(x ** 2 + y ** 2 + z ** 2) * 10, 4)  # path length to mm
-    theta = np.radians(np.arccos(z / r))  # degrees
-    phi = np.radians(np.arctan(y / x))  # degrees
+    theta = np.arccos((z * 10) / r)  # degrees
+    phi = np.arctan((y * 10) / (x*10))  # degrees
     return r, theta, phi
 
 
